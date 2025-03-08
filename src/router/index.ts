@@ -1,17 +1,16 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import Search
-
-const routes = [
-  {
-    path: '/',
-    name: 'Search',
-    component: Search,
-  },
-];
+//@ts-ignore
+import Search from '../views/Search.vue';
 
 const router = createRouter({
-  history: createWebHistory(),
-  routes,
+  history: createWebHistory(import.meta.env.BASE_URL),
+  routes: [
+    {
+      path: '/',
+      name: 'search',
+      component: Search,
+    },
+  ]
 });
 
 export default router;

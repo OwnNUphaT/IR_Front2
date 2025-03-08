@@ -1,22 +1,19 @@
 <script setup lang="ts">
-import Search from './views/Search.vue'
+import {RouterView} from 'vue-router';
+
+//@ts-ignore
+import Navbar from './components/Navbar.vue';
+//@ts-ignore
+import Search from './views/Search.vue';
+
 </script>
 
 <template>
-  <Search/>
+  <header>
+    <Navbar />
+  </header>
+  <div> 
+    <RouterView />
+  </div>
 </template>
 
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
-}
-</style>

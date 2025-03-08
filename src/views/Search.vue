@@ -1,6 +1,5 @@
 <template>
   <div class="min-h-screen bg-gray-100">
-    <Navbar />
     <div class="container mx-auto px-4 py-16">
       <div class="max-w-3xl mx-auto text-center mb-12">
         <h1 class="text-4xl font-bold text-gray-800 mb-4">Find Your Perfect Recipe</h1>
@@ -30,9 +29,7 @@
           <h2 class="text-lg font-semibold mb-4">Search Results</h2>
           <div v-for="(recipe, index) in searchResults" :key="index" class="mb-4 border-b pb-4">
             <h3 class="text-xl font-semibold">{{ recipe.Name }}</h3>
-            <p class="text-gray-600">{{ recipe.Description }}</p>
             <img v-if="recipe.image_link" :src="recipe.image_link" alt="Recipe Image" class="w-full h-48 object-cover rounded-lg mt-2" />
-            <p class="text-sm text-gray-500">Calories: {{ recipe.Calories }}</p>
           </div>
         </div>
       </div>
