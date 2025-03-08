@@ -1,16 +1,24 @@
 import { createRouter, createWebHistory } from 'vue-router';
-//@ts-ignore
 import Search from '../views/Search.vue';
+import RecipeDetail from '../views/RecipeDetail.vue';
+
+const routes = [
+  {
+    path: '/search',
+    name: 'Search',
+    component: Search,
+  },
+  {
+    path: '/recipe/:id',
+    name: 'RecipeDetail',
+    component: RecipeDetail,
+    props: true,
+  }
+];
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [
-    {
-      path: '/search',
-      name: 'search',
-      component: Search,
-    },
-  ]
+  history: createWebHistory(),
+  routes,
 });
 
 export default router;
