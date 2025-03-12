@@ -47,20 +47,42 @@
 
 <script>
 import axios from 'axios';
-import Navbar from '../components/Navbar.vue';
 
 export default {
   name: 'SearchPage',
-  components: { Navbar },
   data() {
     return {
       searchQuery: '',
-      searchResults: []
+      searchResults: [],
+      comeFromDetail: false
     };
   },
   created() {
-    // Restore search state when component is created
-    this.restoreSearchState();
+    // Check if we're coming from the detail page
+    this.comeFromDetail = sessionStorage.getItem('comeFromDetail') === 'true';
+    
+    // Only restore search query and results if coming from detail page
+    if (this.comeFromDetail) {
+      const storedQuery = sessionStorage.getItem('lastSearchQuery');
+      const storedResults = sessionStorage.getItem('lastSearchResults');
+      
+      if (storedQuery) {
+        this.searchQuery = storedQuery;
+      }
+      
+      if (storedResults) {
+        this.searchResults = JSON.parse(storedResults);
+      }
+      
+      // Reset the flag
+      sessionStorage.removeItem('comeFromDetail');
+    } else {
+      // Clear previous search data if not coming from detail page
+      sessionStorage.removeItem('lastSearchQuery');
+      sessionStorage.removeItem('lastSearchResults');
+      this.searchQuery = '';
+      this.searchResults = [];
+    }
   },
   methods: {
     async performSearch() {
@@ -73,8 +95,10 @@ export default {
         
         if (response.data.status === 'success') {
           this.searchResults = response.data.results;
-          // Save search state to localStorage
-          this.saveSearchState();
+          
+          // Save search query and results to sessionStorage
+          sessionStorage.setItem('lastSearchQuery', this.searchQuery);
+          sessionStorage.setItem('lastSearchResults', JSON.stringify(this.searchResults));
         } else {
           console.error('Search error:', response.data.message);
         }
@@ -83,36 +107,15 @@ export default {
       }
     },
     viewRecipeDetail(recipe) {
-      // Store the selected recipe in localStorage
-      localStorage.setItem('selectedRecipe', JSON.stringify(recipe));
+      // Save the selected recipe to sessionStorage
+      sessionStorage.setItem('selectedRecipe', JSON.stringify(recipe));
       
-      // Save current search state before navigating
-      this.saveSearchState();
-      
-      // Navigate to the recipe detail page
+      // Navigate to recipe detail page
       this.$router.push({
         name: 'RecipeDetail',
         params: { id: recipe.RecipeId }
       });
-    },
-    saveSearchState() {
-      // Save current search query and results to localStorage
-      localStorage.setItem('lastSearchQuery', this.searchQuery);
-      localStorage.setItem('lastSearchResults', JSON.stringify(this.searchResults));
-    },
-    restoreSearchState() {
-      // Restore search query from localStorage
-      const savedQuery = localStorage.getItem('lastSearchQuery');
-      if (savedQuery) {
-        this.searchQuery = savedQuery;
-      }
-      
-      // Restore search results from localStorage
-      const savedResults = localStorage.getItem('lastSearchResults');
-      if (savedResults) {
-        this.searchResults = JSON.parse(savedResults);
-      }
-    },
+    }
   }
 };
 </script>
