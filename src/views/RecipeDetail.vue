@@ -1,15 +1,35 @@
 <template>
-  <div class="min-h-screen bg-gray-800 text-white">
-    <div class="container mx-auto px-4 py-16">
-      <div v-if="recipe && recipe.Name" class="max-w-2xl mx-auto bg-gray-700 rounded-lg shadow-lg p-6">
-        <h1 class="text-3xl font-bold text-center mb-4">{{ recipe.Name }}</h1>
-        <img v-if="recipe.image_url" :src="recipe.image_url" alt="Recipe Image" class="w-full h-64 object-cover rounded-lg mb-4" />
-        <p class="text-gray-300">{{ recipe.Description }}</p>
+  <div class="min-h-screen bg-gray-900 text-white">
+    <div class="container mx-auto px-4 py-12">
+      <div v-if="recipe && recipe.Name" class="max-w-3xl mx-auto bg-gray-800 rounded-lg shadow-lg p-6">
+        <h1 class="text-4xl font-bold text-center mb-4">{{ recipe.Name }}</h1>
+        
+        <!-- Recipe Image -->
+        <img v-if="recipe.image_url" :src="recipe.image_url" alt="Recipe Image" class="w-full h-64 object-cover rounded-lg mb-6" />
 
-        <div class="mt-6">
-          <button @click="goBackToSearch" class="bg-blue-500 px-4 py-2 rounded-lg hover:bg-blue-600">
-            Back to Search
-          </button>
+        <!-- Recipe Description -->
+        <p class="text-gray-300 text-lg text-center mb-6">{{ recipe.Description }}</p>
+
+        <!-- Ingredients -->
+        <div class="mb-6">
+          <h2 class="text-2xl font-semibold border-b border-gray-600 pb-2">Ingredients</h2>
+          <ul class="list-disc list-inside mt-3 text-gray-300">
+            <li v-for="(ingredient, index) in formattedIngredients" :key="index">{{ ingredient }}</li>
+          </ul>
+        </div>
+
+        <!-- Instructions -->
+        <div class="mb-6">
+          <h2 class="text-2xl font-semibold border-b border-gray-600 pb-2">Instructions</h2>
+          <ol class="list-decimal list-inside mt-3 text-gray-300">
+            <li v-for="(step, index) in formattedInstructions" :key="index">{{ step }}</li>
+          </ol>
+        </div>
+
+        <!-- Extra Info -->
+        <div class="flex justify-between text-gray-400 bg-gray-700 p-4 rounded-lg">
+          <p><strong>Calories:</strong> {{ recipe.Calories || "N/A" }}</p>
+          <p><strong>Total Time:</strong> {{ formattedTotalTime }}</p>
         </div>
 
         <!-- Save to Folder Section -->
@@ -33,6 +53,13 @@
             Go to Login
           </button>
         </div>
+
+        <!-- Back Button -->
+        <div class="mt-6">
+          <button @click="goBackToSearch" class="bg-blue-500 px-4 py-2 rounded-lg hover:bg-blue-600">
+            Back to Search
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -51,6 +78,19 @@ export default {
       username: null,
       isLoggedIn: false
     };
+  },
+  computed: {
+    formattedIngredients() {
+      return this.recipe?.RecipeIngredientParts ? this.recipe.RecipeIngredientParts.split(', ') : [];
+    },
+    formattedInstructions() {
+      return this.recipe?.RecipeInstructions 
+        ? this.recipe.RecipeInstructions.split('. ').map(step => step.trim()).filter(step => step) 
+        : [];
+    },
+    formattedTotalTime() {
+      return this.recipe?.TotalTime ? this.recipe.TotalTime.replace(/^PT/, '') : 'N/A';
+    }
   },
   async created() {
     const storedRecipe = sessionStorage.getItem('selectedRecipe');
@@ -117,3 +157,9 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+button:hover {
+  transition: background-color 0.3s ease-in-out;
+}
+</style>
