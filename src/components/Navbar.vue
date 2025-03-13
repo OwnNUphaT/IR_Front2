@@ -5,6 +5,7 @@
       <div class="flex items-center space-x-4">
         <router-link to="/" class="hover:text-gray-300">Home</router-link>
         <router-link to="/search" class="hover:text-gray-300">Search</router-link>
+        <router-link to="/folder" class="hover:text-gray-300">Folder</router-link>
         
         <div v-if="isLoggedIn" class="flex items-center space-x-3">
           <span class="mr-2">{{ username }}</span>

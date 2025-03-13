@@ -3,6 +3,7 @@ import Search from '../views/Search.vue';
 import RecipeDetail from '../views/RecipeDetail.vue';
 import Auth from '../views/Auth.vue';
 import Home from '../views/Home.vue';
+import Folder from '../views/Folder.vue';
 
 const routes = [
   {
@@ -25,7 +26,14 @@ const routes = [
     path: '/login',
     name: 'Auth',
     component: Auth,
-  }
+  },
+  {
+    path: '/folder',
+    name: 'Folder',
+    component: Folder,
+  },
+  
+
 ];
 
 const router = createRouter({
