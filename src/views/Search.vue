@@ -23,6 +23,23 @@
             </button>
           </div>
         </div>
+        <!-- Suggested Correction -->
+        <div 
+          v-if="suggestedQuery && suggestedQuery !== searchQuery"
+          class="mt-6 flex justify-center"
+        >
+          <div class="bg-yellow-500 text-gray-900 px-6 py-3 rounded-lg shadow-lg">
+            <p class="text-lg font-semibold">
+              Did you mean 
+              <span 
+                @click="useSuggestedQuery" 
+                class="cursor-pointer underline hover:text-gray-800 transition duration-200"
+              >
+                {{ suggestedQuery }}
+              </span>?
+            </p>
+          </div>
+        </div>
         
         <div v-if="searchResults.length > 0" class="mt-8">
           <h2 class="text-lg font-semibold mb-4 text-center">Search Results</h2>
@@ -40,6 +57,10 @@
             </div>
           </div>
         </div>
+
+        <div v-else-if="searchQuery && !searchResults.length" class="text-center text-gray-400 mt-6">
+          <p>No results found for "{{ searchQuery }}"</p>
+        </div>
       </div>
     </div>
   </div>
@@ -54,6 +75,7 @@ export default {
     return {
       searchQuery: '',
       searchResults: [],
+      suggestedQuery: null, // Stores suggested word
       comeFromDetail: false
     };
   },
@@ -61,7 +83,7 @@ export default {
     // Check if we're coming from the detail page
     this.comeFromDetail = sessionStorage.getItem('comeFromDetail') === 'true';
     
-    // Only restore search query and results if coming from detail page
+    // Restore previous search query and results
     if (this.comeFromDetail) {
       const storedQuery = sessionStorage.getItem('lastSearchQuery');
       const storedResults = sessionStorage.getItem('lastSearchResults');
@@ -77,7 +99,7 @@ export default {
       // Reset the flag
       sessionStorage.removeItem('comeFromDetail');
     } else {
-      // Clear previous search data if not coming from detail page
+      // Clear previous search data
       sessionStorage.removeItem('lastSearchQuery');
       sessionStorage.removeItem('lastSearchResults');
       this.searchQuery = '';
@@ -92,9 +114,16 @@ export default {
         const response = await axios.get(`http://127.0.0.1:5000/search`, {
           params: { query: this.searchQuery }
         });
-        
+
         if (response.data.status === 'success') {
           this.searchResults = response.data.results;
+
+          // If there's a suggested correction, show it
+          if (response.data.corrected_query) {
+            this.suggestedQuery = response.data.corrected_query;
+          } else {
+            this.suggestedQuery = null;
+          }
           
           // Save search query and results to sessionStorage
           sessionStorage.setItem('lastSearchQuery', this.searchQuery);
@@ -106,16 +135,23 @@ export default {
         console.error('Error fetching search results:', error);
       }
     },
+
+    useSuggestedQuery() {
+      this.searchQuery = this.suggestedQuery;
+      this.suggestedQuery = null;
+      this.performSearch();
+    },
+
     viewRecipeDetail(recipe) {
-      // Save the selected recipe to sessionStorage
       sessionStorage.setItem('selectedRecipe', JSON.stringify(recipe));
-      
-      // Navigate to recipe detail page
-      this.$router.push({
-        name: 'RecipeDetail',
-        params: { id: recipe.RecipeId }
-      });
+      this.$router.push({ name: 'RecipeDetail', params: { id: recipe.RecipeId } });
     }
   }
 };
 </script>
+
+<style scoped>
+button:hover {
+  transition: background-color 0.3s;
+}
+</style>
