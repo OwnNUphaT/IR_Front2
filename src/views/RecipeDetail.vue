@@ -1,29 +1,107 @@
 <template>
   <div class="min-h-screen bg-gray-800 text-white">
-    <div class="container mx-auto px-4 py-8">
-      <h1 class="text-3xl font-bold text-center mb-6">Your Folders</h1>
+    <div class="container mx-auto px-4 py-16">
+      <div v-if="recipe && recipe.Name" class="max-w-2xl mx-auto bg-gray-700 rounded-lg shadow-lg p-6">
+        <h1 class="text-3xl font-bold text-center mb-4">{{ recipe.Name }}</h1>
+        <img 
+          v-if="recipe.image_url" 
+          :src="recipe.image_url" 
+          alt="Recipe Image" 
+          class="w-full h-64 object-cover rounded-lg mb-4" 
+        />
+        <p class="text-gray-300">{{ recipe.Description }}</p>
 
-      <div v-for="folder in folders" :key="folder.id" class="bg-gray-700 p-4 rounded-lg shadow-lg mb-4">
-        <div class="flex justify-between items-center cursor-pointer" @click="toggleFolder(folder.id)">
-          <h2 class="text-lg font-semibold">{{ folder.name }}</h2>
-          <button @click.stop="deleteFolder(folder.id)" class="bg-red-500 px-3 py-1 rounded hover:bg-red-600">
-            Delete
-          </button>
+        <!-- Ingredients Section -->
+        <div class="mt-4">
+          <h2 class="text-lg font-semibold">Ingredients:</h2>
+          <ul class="list-decimal list-inside text-gray-400">
+            <li v-for="(ingredient, index) in formattedIngredients" :key="index">
+              {{ ingredient }}
+            </li>
+          </ul>
         </div>
 
-        <!-- Show Saved Recipes Inside the Folder -->
-        <div v-if="openFolders.includes(folder.id)" class="mt-3">
-          <h3 class="text-md font-semibold text-gray-300 mb-2">Saved Recipes:</h3>
-          <div v-for="recipe in folder.recipes" :key="recipe.recipe_id" class="bg-gray-600 p-2 rounded mb-2 flex justify-between">
-            <div class="cursor-pointer" @click="viewSavedRecipe(recipe)">
-              <img v-if="recipe.image_url" :src="recipe.image_url" alt="Recipe Image" class="w-16 h-16 rounded-lg object-cover" />
-              <span class="ml-3">{{ recipe.name }}</span>
-            </div>
-            <button @click.stop="removeRecipe(folder.id, recipe.recipe_id)" class="bg-red-500 px-2 py-1 rounded hover:bg-red-600">
-              Remove
+        <!-- Instructions Section -->
+        <div class="mt-4">
+          <h2 class="text-lg font-semibold">Instructions:</h2>
+          <ol class="list-decimal list-inside text-gray-400">
+            <li v-for="(step, index) in formattedInstructions" :key="index">
+              {{ step }}
+            </li>
+          </ol>
+        </div>
+
+        <!-- Recipe Details -->
+        <div class="mt-4 flex justify-between text-gray-400">
+          <p><strong>Calories:</strong> {{ recipe.Calories }}</p>
+          <p><strong>Total Time:</strong> {{ formattedTotalTime }}</p>
+        </div>
+
+        <!-- Save to Folder & Rate -->
+        <div v-if="isLoggedIn" class="mt-6">
+          <h2 class="text-lg font-semibold mb-2">Save to Folder & Rate</h2>
+
+          <div class="flex items-center space-x-3">
+            <!-- Folder Selection -->
+            <select 
+              v-model="selectedFolder" 
+              class="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-500"
+            >
+              <option disabled value="">Select a folder</option>
+              <option v-for="folder in folders" :key="folder.id" :value="folder.id">
+                {{ folder.name }}
+              </option>
+            </select>
+
+            <!-- Rating Selection -->
+            <select 
+              v-model="selectedRating" 
+              class="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-500"
+            >
+              <option disabled value="">Rate (1-5)</option>
+              <option v-for="n in 5" :key="n" :value="n">{{ n }} ⭐</option>
+            </select>
+
+            <button 
+              @click="saveRecipe" 
+              class="bg-green-500 px-4 py-2 rounded-lg hover:bg-green-600"
+            >
+              Save & Rate
             </button>
           </div>
         </div>
+
+        <!-- Show login prompt if not logged in -->
+        <div v-else class="mt-6 text-center">
+          <p class="text-red-500">You must be logged in to save recipes.</p>
+          <button 
+            @click="redirectToLogin" 
+            class="mt-2 bg-yellow-500 px-4 py-2 rounded-lg hover:bg-yellow-600"
+          >
+            Go to Login
+          </button>
+        </div>
+
+        <!-- Back to Search -->
+        <div class="mt-6">
+          <button 
+            @click="goBackToSearch" 
+            class="bg-blue-500 px-4 py-2 rounded-lg hover:bg-blue-600"
+          >
+            Back to Search
+          </button>
+        </div>
+
+      </div>
+
+      <div v-else class="text-center">
+        <p>Recipe not found. Please try again.</p>
+        <button 
+          @click="goBackToSearch" 
+          class="mt-6 bg-blue-500 px-4 py-2 rounded-lg hover:bg-blue-600"
+        >
+          Back to Search
+        </button>
       </div>
     </div>
   </div>
@@ -33,87 +111,106 @@
 import axios from 'axios';
 
 export default {
-  name: "FolderView",
+  name: 'RecipeDetail',
   data() {
     return {
+      recipe: null,
+      selectedFolder: "",
+      selectedRating: "",
       folders: [],
-      openFolders: [],
       username: null,
+      isLoggedIn: false
     };
   },
+  computed: {
+    formattedIngredients() {
+      return this.recipe?.RecipeIngredientParts 
+        ? this.recipe.RecipeIngredientParts.split(', ') 
+        : [];
+    },
+    formattedInstructions() {
+      return this.recipe?.RecipeInstructions 
+        ? this.recipe.RecipeInstructions.split('. ')
+          .map(step => step.trim())
+          .filter(step => step) 
+        : [];
+    },
+    formattedTotalTime() {
+      return this.recipe?.TotalTime ? this.recipe.TotalTime.replace(/^PT/, '') : 'N/A';
+    }
+  },
   async created() {
+    const storedRecipe = sessionStorage.getItem('selectedRecipe');
+    if (storedRecipe) {
+      this.recipe = JSON.parse(storedRecipe);
+    }
+
     const userData = localStorage.getItem('user');
     if (userData) {
       this.username = JSON.parse(userData).username;
+      this.isLoggedIn = true;
       await this.fetchFolders();
     }
   },
   methods: {
+    redirectToLogin() {
+      this.$router.push('/login');
+    },
+    goBackToSearch() {
+      sessionStorage.setItem('comeFromDetail', 'true');
+      this.$router.push('/search');
+    },
     async fetchFolders() {
+      if (!this.username) return;
+
       try {
-        const response = await axios.post("http://127.0.0.1:5000/folders", { username: this.username });
-        if (response.data.status === "success") {
+        const response = await axios.post('http://127.0.0.1:5000/folders', {
+          username: this.username
+        });
+
+        if (response.data.status === 'success') {
           this.folders = response.data.folders;
-          // Fetch saved recipes for each folder
-          for (let folder of this.folders) {
-            await this.fetchSavedRecipes(folder.id);
-          }
+        } else {
+          console.error("Error fetching folders:", response.data.message);
         }
       } catch (error) {
-        console.error("Error fetching folders:", error);
+        console.error('Error fetching folders:', error);
       }
     },
-    async fetchSavedRecipes(folderId) {
+    async saveRecipe() {
+      if (!this.selectedFolder) {
+        alert('Please select a folder.');
+        return;
+      }
+      if (!this.selectedRating) {
+        alert('Please provide a rating.');
+        return;
+      }
+
       try {
-        const response = await axios.post(`http://127.0.0.1:5000/folder_recipes/${folderId}`, {
+        const response = await axios.post('http://127.0.0.1:5000/save_recipe', {
           username: this.username,
+          folder_id: this.selectedFolder,
+          recipe: this.recipe,
+          rating: this.selectedRating
         });
-        if (response.data.status === "success") {
-          const folder = this.folders.find((f) => f.id === folderId);
-          if (folder) {
-            folder.recipes = response.data.recipes;
-          }
+
+        if (response.data.status === 'success') {
+          alert('Recipe saved with rating!');
+        } else {
+          alert('Error: ' + response.data.message);
         }
       } catch (error) {
-        console.error("Error fetching saved recipes:", error);
+        console.error('Error saving recipe:', error);
+        alert('Failed to save recipe.');
       }
-    },
-    viewSavedRecipe(recipe) {
-      sessionStorage.setItem("savedRecipe", JSON.stringify(recipe));
-      this.$router.push("/saved-recipe");
-    },
-    toggleFolder(folderId) {
-      if (this.openFolders.includes(folderId)) {
-        this.openFolders = this.openFolders.filter((id) => id !== folderId);
-      } else {
-        this.openFolders.push(folderId);
-      }
-    },
-    async deleteFolder(folderId) {
-      if (!confirm("Are you sure you want to delete this folder?")) return;
-      try {
-        await axios.delete("http://127.0.0.1:5000/delete_folder", {
-          data: { username: this.username, folder_id: folderId },
-        });
-        this.folders = this.folders.filter((folder) => folder.id !== folderId);
-      } catch (error) {
-        console.error("Error deleting folder:", error);
-      }
-    },
-    async removeRecipe(folderId, recipeId) {
-      if (!confirm("Are you sure you want to remove this recipe?")) return;
-      try {
-        await axios.delete("http://127.0.0.1:5000/remove_saved_recipe", {
-          data: { username: this.username, folder_id: folderId, recipe_id: recipeId },
-        });
-        const folder = this.folders.find((f) => f.id === folderId);
-        if (folder) {
-          folder.recipes = folder.recipes.filter((r) => r.recipe_id !== recipeId);
-        }
-      } catch (error) {
-        console.error("Error removing recipe:", error);
-      }
-    },
-  },
+    }
+  }
 };
 </script>
+
+<style scoped>
+button:hover {
+  transition: background-color 0.3s;
+}
+</style>
