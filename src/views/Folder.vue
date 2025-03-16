@@ -13,7 +13,7 @@
               class="w-full px-4 py-2 border rounded bg-gray-700 text-white focus:outline-none"
             />
             <button @click="createFolder" class="bg-green-500 px-4 py-2 rounded-lg hover:bg-green-600 transition">
-              + Create
+              Create
             </button>
           </div>
         </div>

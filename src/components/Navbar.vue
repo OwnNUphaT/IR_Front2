@@ -1,7 +1,7 @@
 <template>
   <nav class="bg-gray-800 text-white shadow-md">
     <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-      <router-link to="/" class="text-xl font-bold">RecipeSearch</router-link>
+      <router-link to="/" class="text-xl font-bold">FoodFinder</router-link>
       <div class="flex items-center space-x-4">
         <router-link to="/" class="hover:text-gray-300">Home</router-link>
         <router-link to="/search" class="hover:text-gray-300">Search</router-link>
