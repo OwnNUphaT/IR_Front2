@@ -1,64 +1,28 @@
 <template>
-  <div class="min-h-screen bg-gray-900 text-white">
-    <div class="container mx-auto px-4 py-12">
-      <div v-if="recipe && recipe.Name" class="max-w-3xl mx-auto bg-gray-800 rounded-lg shadow-lg p-6">
-        <h1 class="text-4xl font-bold text-center mb-4">{{ recipe.Name }}</h1>
-        
-        <!-- Recipe Image -->
-        <img v-if="recipe.image_url" :src="recipe.image_url" alt="Recipe Image" class="w-full h-64 object-cover rounded-lg mb-6" />
+  <div class="min-h-screen bg-gray-800 text-white">
+    <div class="container mx-auto px-4 py-8">
+      <h1 class="text-3xl font-bold text-center mb-6">Your Folders</h1>
 
-        <!-- Recipe Description -->
-        <p class="text-gray-300 text-lg text-center mb-6">{{ recipe.Description }}</p>
-
-        <!-- Ingredients -->
-        <div class="mb-6">
-          <h2 class="text-2xl font-semibold border-b border-gray-600 pb-2">Ingredients</h2>
-          <ul class="list-disc list-inside mt-3 text-gray-300">
-            <li v-for="(ingredient, index) in formattedIngredients" :key="index">{{ ingredient }}</li>
-          </ul>
-        </div>
-
-        <!-- Instructions -->
-        <div class="mb-6">
-          <h2 class="text-2xl font-semibold border-b border-gray-600 pb-2">Instructions</h2>
-          <ol class="list-decimal list-inside mt-3 text-gray-300">
-            <li v-for="(step, index) in formattedInstructions" :key="index">{{ step }}</li>
-          </ol>
-        </div>
-
-        <!-- Extra Info -->
-        <div class="flex justify-between text-gray-400 bg-gray-700 p-4 rounded-lg">
-          <p><strong>Calories:</strong> {{ recipe.Calories || "N/A" }}</p>
-          <p><strong>Total Time:</strong> {{ formattedTotalTime }}</p>
-        </div>
-
-        <!-- Save to Folder Section -->
-        <div v-if="isLoggedIn" class="mt-6">
-          <h2 class="text-lg font-semibold mb-2">Save to Folder</h2>
-          <select v-model="selectedFolder" class="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-500">
-            <option disabled value="">Select a folder</option>
-            <option v-for="folder in folders" :key="folder.id" :value="folder.id">
-              {{ folder.name }}
-            </option>
-          </select>
-          <button @click="saveToFolder" class="ml-4 bg-green-500 px-4 py-2 rounded-lg hover:bg-green-600">
-            Save Recipe
+      <div v-for="folder in folders" :key="folder.id" class="bg-gray-700 p-4 rounded-lg shadow-lg mb-4">
+        <div class="flex justify-between items-center cursor-pointer" @click="toggleFolder(folder.id)">
+          <h2 class="text-lg font-semibold">{{ folder.name }}</h2>
+          <button @click.stop="deleteFolder(folder.id)" class="bg-red-500 px-3 py-1 rounded hover:bg-red-600">
+            Delete
           </button>
         </div>
 
-        <!-- Show login prompt if not logged in -->
-        <div v-else class="mt-6 text-center">
-          <p class="text-red-500">You must be logged in to save recipes.</p>
-          <button @click="redirectToLogin" class="mt-2 bg-yellow-500 px-4 py-2 rounded-lg hover:bg-yellow-600">
-            Go to Login
-          </button>
-        </div>
-
-        <!-- Back Button -->
-        <div class="mt-6">
-          <button @click="goBackToSearch" class="bg-blue-500 px-4 py-2 rounded-lg hover:bg-blue-600">
-            Back to Search
-          </button>
+        <!-- Show Saved Recipes Inside the Folder -->
+        <div v-if="openFolders.includes(folder.id)" class="mt-3">
+          <h3 class="text-md font-semibold text-gray-300 mb-2">Saved Recipes:</h3>
+          <div v-for="recipe in folder.recipes" :key="recipe.recipe_id" class="bg-gray-600 p-2 rounded mb-2 flex justify-between">
+            <div class="cursor-pointer" @click="viewSavedRecipe(recipe)">
+              <img v-if="recipe.image_url" :src="recipe.image_url" alt="Recipe Image" class="w-16 h-16 rounded-lg object-cover" />
+              <span class="ml-3">{{ recipe.name }}</span>
+            </div>
+            <button @click.stop="removeRecipe(folder.id, recipe.recipe_id)" class="bg-red-500 px-2 py-1 rounded hover:bg-red-600">
+              Remove
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -69,97 +33,87 @@
 import axios from 'axios';
 
 export default {
-  name: 'RecipeDetail',
+  name: "FolderView",
   data() {
     return {
-      recipe: null,
-      selectedFolder: "",
       folders: [],
+      openFolders: [],
       username: null,
-      isLoggedIn: false
     };
   },
-  computed: {
-    formattedIngredients() {
-      return this.recipe?.RecipeIngredientParts ? this.recipe.RecipeIngredientParts.split(', ') : [];
-    },
-    formattedInstructions() {
-      return this.recipe?.RecipeInstructions 
-        ? this.recipe.RecipeInstructions.split('. ').map(step => step.trim()).filter(step => step) 
-        : [];
-    },
-    formattedTotalTime() {
-      return this.recipe?.TotalTime ? this.recipe.TotalTime.replace(/^PT/, '') : 'N/A';
-    }
-  },
   async created() {
-    const storedRecipe = sessionStorage.getItem('selectedRecipe');
-    if (storedRecipe) {
-      this.recipe = JSON.parse(storedRecipe);
-    }
-
     const userData = localStorage.getItem('user');
     if (userData) {
       this.username = JSON.parse(userData).username;
-      this.isLoggedIn = true;
-      await this.fetchFolders();  // Fetch folders after user is set
+      await this.fetchFolders();
     }
   },
   methods: {
-    goBackToSearch() {
-      sessionStorage.setItem('comeFromDetail', 'true');
-      this.$router.push('/search');
-    },
-    redirectToLogin() {
-      this.$router.push('/login');
-    },
     async fetchFolders() {
-      if (!this.username) return;
-
       try {
-        const response = await axios.post('http://127.0.0.1:5000/folders', {
-          username: this.username  // Send username in request
-        });
-
-        if (response.data.status === 'success') {
+        const response = await axios.post("http://127.0.0.1:5000/folders", { username: this.username });
+        if (response.data.status === "success") {
           this.folders = response.data.folders;
-          console.log("Fetched folders:", this.folders); // Debugging
-        } else {
-          console.error("Error fetching folders:", response.data.message);
+          // Fetch saved recipes for each folder
+          for (let folder of this.folders) {
+            await this.fetchSavedRecipes(folder.id);
+          }
         }
       } catch (error) {
-        console.error('Error fetching folders:', error);
+        console.error("Error fetching folders:", error);
       }
     },
-    async saveToFolder() {
-      if (!this.selectedFolder) {
-        alert('Please select a folder first.');
-        return;
-      }
-
+    async fetchSavedRecipes(folderId) {
       try {
-        const response = await axios.post('http://127.0.0.1:5000/save_recipe', {
+        const response = await axios.post(`http://127.0.0.1:5000/folder_recipes/${folderId}`, {
           username: this.username,
-          folder_id: this.selectedFolder,
-          recipe: this.recipe
         });
-
-        if (response.data.status === 'success') {
-          alert('Recipe saved successfully!');
-        } else {
-          alert('Error: ' + response.data.message);
+        if (response.data.status === "success") {
+          const folder = this.folders.find((f) => f.id === folderId);
+          if (folder) {
+            folder.recipes = response.data.recipes;
+          }
         }
       } catch (error) {
-        console.error('Error saving recipe:', error);
-        alert('Failed to save recipe.');
+        console.error("Error fetching saved recipes:", error);
       }
-    }
-  }
+    },
+    viewSavedRecipe(recipe) {
+      sessionStorage.setItem("savedRecipe", JSON.stringify(recipe));
+      this.$router.push("/saved-recipe");
+    },
+    toggleFolder(folderId) {
+      if (this.openFolders.includes(folderId)) {
+        this.openFolders = this.openFolders.filter((id) => id !== folderId);
+      } else {
+        this.openFolders.push(folderId);
+      }
+    },
+    async deleteFolder(folderId) {
+      if (!confirm("Are you sure you want to delete this folder?")) return;
+      try {
+        await axios.delete("http://127.0.0.1:5000/delete_folder", {
+          data: { username: this.username, folder_id: folderId },
+        });
+        this.folders = this.folders.filter((folder) => folder.id !== folderId);
+      } catch (error) {
+        console.error("Error deleting folder:", error);
+      }
+    },
+    async removeRecipe(folderId, recipeId) {
+      if (!confirm("Are you sure you want to remove this recipe?")) return;
+      try {
+        await axios.delete("http://127.0.0.1:5000/remove_saved_recipe", {
+          data: { username: this.username, folder_id: folderId, recipe_id: recipeId },
+        });
+        const folder = this.folders.find((f) => f.id === folderId);
+        if (folder) {
+          folder.recipes = folder.recipes.filter((r) => r.recipe_id !== recipeId);
+        }
+      } catch (error) {
+        console.error("Error removing recipe:", error);
+      }
+    },
+  },
 };
 </script>
-
-<style scoped>
-button:hover {
-  transition: background-color 0.3s ease-in-out;
-}
-</style>

@@ -4,6 +4,7 @@ import RecipeDetail from '../views/RecipeDetail.vue';
 import Auth from '../views/Auth.vue';
 import Home from '../views/Home.vue';
 import Folder from '../views/Folder.vue';
+import DetailFolder from '../views/DetailFolder.vue';
 
 const routes = [
   {
@@ -31,6 +32,11 @@ const routes = [
     path: '/folder',
     name: 'Folder',
     component: Folder,
+  },
+  {
+    path: '/folderDetail',
+    name: 'DetailFolder',
+    component: DetailFolder,
   },
 
   
