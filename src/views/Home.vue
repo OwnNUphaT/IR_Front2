@@ -6,13 +6,29 @@
           <p class="text-gray-400">Based on your saved recipes</p>
         </div>
   
+        <!-- Most Viewed Recipes Section -->
+        <div v-if="mostViewed.length > 0" class="mb-12">
+          <h2 class="text-2xl font-semibold mb-4">🔥 Most Viewed Recipes</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            <div v-for="(recipe, index) in mostViewed.slice(0, 3)" :key="index"
+                 class="bg-gray-700 rounded-lg shadow-lg overflow-hidden cursor-pointer hover:bg-gray-600 transition duration-200"
+                 @click="viewRecipeDetailAndTrack(recipe)">
+              <img v-if="recipe.image_url" :src="recipe.image_url" alt="Recipe Image" class="w-full h-48 object-cover" />
+              <div class="p-4">
+                <h3 class="text-xl font-semibold">{{ recipe.name }}</h3>
+                <p class="text-gray-400 text-sm mt-2">Views: {{ recipe.view_count }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+  
         <!-- Personalized Recommendations Section -->
         <div v-if="personalized.length > 0" class="mb-12">
           <h2 class="text-2xl font-semibold mb-4">Personalized Recommendations</h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             <div v-for="(recipe, index) in personalized" :key="index"
                  class="bg-gray-700 rounded-lg shadow-lg overflow-hidden cursor-pointer hover:bg-gray-600 transition duration-200"
-                 @click="viewRecipeDetail(recipe)">
+                 @click="viewRecipeDetailAndTrack(recipe)">
               <img v-if="recipe.image_url" :src="recipe.image_url" alt="Recipe Image" class="w-full h-48 object-cover" />
               <div class="p-4">
                 <h3 class="text-xl font-semibold">{{ recipe.Name }}</h3>
@@ -45,7 +61,7 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             <div v-for="(recipe, index) in suggestions" :key="index"
                  class="bg-gray-700 rounded-lg shadow-lg overflow-hidden cursor-pointer hover:bg-gray-600 transition duration-200"
-                 @click="viewRecipeDetail(recipe)">
+                 @click="viewRecipeDetailAndTrack(recipe)">
               <img v-if="recipe.image_url" :src="recipe.image_url" alt="Recipe Image" class="w-full h-48 object-cover" />
               <div class="p-4">
                 <h3 class="text-xl font-semibold">{{ recipe.Name }}</h3>
@@ -77,7 +93,8 @@
         folders: [],
         selectedFolder: '',
         username: '',
-        errorMessage: ''
+        errorMessage: '',
+        mostViewed: []
       };
     },
     async created() {
@@ -86,6 +103,7 @@
         this.username = JSON.parse(userData).username;
         await this.fetchPersonalized();
         await this.fetchFolders();
+        await this.fetchMostViewed();
       } else {
         alert('Please login to get recommendations.');
         this.$router.push('/login');
@@ -142,7 +160,23 @@
         }
       },
   
-      viewRecipeDetail(recipe) {
+      async fetchMostViewed() {
+        try {
+          const response = await axios.get('http://127.0.0.1:5000/most_viewed');
+          if (response.data.status === 'success') {
+            this.mostViewed = response.data.most_viewed;
+          }
+        } catch (error) {
+          console.error('Most viewed fetch error:', error);
+        }
+      },
+  
+      async viewRecipeDetailAndTrack(recipe) {
+        try {
+          await axios.post('http://127.0.0.1:5000/track_view', { recipe });
+        } catch (error) {
+          console.error('Track view error:', error);
+        }
         sessionStorage.setItem('selectedRecipe', JSON.stringify(recipe));
         this.$router.push({ name: 'RecDetail', params: { id: recipe.RecipeId } });
       },

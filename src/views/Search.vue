@@ -4,7 +4,7 @@
       <div class="max-w-3xl mx-auto text-center mb-12">
         <h1 class="text-4xl font-bold mb-4">Find Your Perfect Recipe</h1>
       </div>
-      
+
       <div class="max-w-2xl mx-auto">
         <div class="bg-gray-700 rounded-lg shadow-lg p-6">
           <div class="flex items-center border-2 border-gray-500 rounded-lg overflow-hidden">
@@ -40,7 +40,7 @@
             </p>
           </div>
         </div>
-        
+
         <div v-if="searchResults.length > 0" class="mt-8">
           <h2 class="text-lg font-semibold mb-4 text-center">Search Results</h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -48,7 +48,7 @@
               v-for="(recipe, index) in searchResults" 
               :key="index" 
               class="bg-gray-700 rounded-lg shadow-lg overflow-hidden cursor-pointer hover:bg-gray-600 transition duration-200"
-              @click="viewRecipeDetail(recipe)"
+              @click="viewRecipeDetailAndTrack(recipe)"
             >
               <img v-if="recipe.image_url" :src="recipe.image_url" alt="Recipe Image" class="w-full h-48 object-cover" />
               <div class="p-4">
@@ -82,20 +82,20 @@ export default {
   created() {
     // Check if we're coming from the detail page
     this.comeFromDetail = sessionStorage.getItem('comeFromDetail') === 'true';
-    
+
     // Restore previous search query and results
     if (this.comeFromDetail) {
       const storedQuery = sessionStorage.getItem('lastSearchQuery');
       const storedResults = sessionStorage.getItem('lastSearchResults');
-      
+
       if (storedQuery) {
         this.searchQuery = storedQuery;
       }
-      
+
       if (storedResults) {
         this.searchResults = JSON.parse(storedResults);
       }
-      
+
       // Reset the flag
       sessionStorage.removeItem('comeFromDetail');
     } else {
@@ -109,7 +109,7 @@ export default {
   methods: {
     async performSearch() {
       if (!this.searchQuery.trim()) return;
-      
+
       try {
         const response = await axios.get(`http://127.0.0.1:5000/search`, {
           params: { query: this.searchQuery }
@@ -124,7 +124,7 @@ export default {
           } else {
             this.suggestedQuery = null;
           }
-          
+
           // Save search query and results to sessionStorage
           sessionStorage.setItem('lastSearchQuery', this.searchQuery);
           sessionStorage.setItem('lastSearchResults', JSON.stringify(this.searchResults));
@@ -142,7 +142,12 @@ export default {
       this.performSearch();
     },
 
-    viewRecipeDetail(recipe) {
+    async viewRecipeDetailAndTrack(recipe) {
+      try {
+        await axios.post('http://127.0.0.1:5000/track_view', { recipe });
+      } catch (error) {
+        console.error('Track view error:', error);
+      }
       sessionStorage.setItem('selectedRecipe', JSON.stringify(recipe));
       this.$router.push({ name: 'RecipeDetail', params: { id: recipe.RecipeId } });
     }
