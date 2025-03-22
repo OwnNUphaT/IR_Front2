@@ -144,7 +144,7 @@
   
       viewRecipeDetail(recipe) {
         sessionStorage.setItem('selectedRecipe', JSON.stringify(recipe));
-        this.$router.push({ name: 'RecipeDetail', params: { id: recipe.RecipeId } });
+        this.$router.push({ name: 'RecDetail', params: { id: recipe.RecipeId } });
       },
   
       goBack() {

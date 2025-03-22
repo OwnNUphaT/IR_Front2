@@ -5,6 +5,7 @@ import Auth from '../views/Auth.vue';
 import Home from '../views/Home.vue';
 import Folder from '../views/Folder.vue';
 import DetailFolder from '../views/DetailFolder.vue';
+import RecipeDetailForRec from '../views/RecipeDetailForRec.vue';
 
 const routes = [
   {
@@ -38,6 +39,12 @@ const routes = [
     name: 'DetailFolder',
     component: DetailFolder,
   },
+  {
+    path: '/RecDetail',
+    name: 'RecDetail',
+    component: RecipeDetailForRec,
+    props: true,
+  }
 
   
 
