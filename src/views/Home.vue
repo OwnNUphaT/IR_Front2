@@ -61,11 +61,6 @@
           <p>{{ errorMessage }}</p>
         </div>
   
-        <div class="mt-8 text-center">
-          <button @click="goBack" class="bg-blue-500 px-6 py-3 rounded-lg hover:bg-blue-600">
-            Back to Home
-          </button>
-        </div>
       </div>
     </div>
   </template>
